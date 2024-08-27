@@ -1,20 +1,46 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from './src/context/ThemeContext';
+import HomeScreen from './src/screens/HomeScreen';
+import AlarmScreen from './src/screens/AlarmScreens';
+import CreateAlarmScreen from './src/screens/CreateAlarmScreen';
+import CustomTimerScreen from './src/screens/CustomTimerScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import EventTimerScreen from './src/screens/EventTimerScreen';
+
+export type RootStackParamList = {
+  Home: undefined;
+  Alarm: { alarmId: string };
+  CreateAlarm: undefined;
+  CustomTimer: undefined;
+  Profile: undefined;
+  EventTimer: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: 'transparent' },
+            }}
+          >
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Alarm" component={AlarmScreen} />
+            <Stack.Screen name="CreateAlarm" component={CreateAlarmScreen} />
+            <Stack.Screen name="CustomTimer" component={CustomTimerScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="EventTimer" component={EventTimerScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
