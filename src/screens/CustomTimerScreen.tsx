@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import React, { useState, useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+import { TimerContext } from '../context/TimerContext'; // Assume this exists
 
 type CustomTimerScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CustomTimer'>;
 
@@ -12,12 +13,32 @@ export default function CustomTimerScreen() {
   const navigation = useNavigation<CustomTimerScreenNavigationProp>();
   const [hours, setHours] = useState('0');
   const [minutes, setMinutes] = useState('0');
+  const { startTimer } = useContext(TimerContext);
 
-  const startCustomTimer = () => {
-    const totalSeconds = parseInt(hours) * 3600 + parseInt(minutes) * 60;
-    // Here you would typically set the timer in your app's state or context
-    // For now, we'll just navigate back to the home screen
+  const validateAndStartTimer = () => {
+    const hoursNum = parseInt(hours);
+    const minutesNum = parseInt(minutes);
+
+    if (isNaN(hoursNum) || isNaN(minutesNum) || hoursNum < 0 || minutesNum < 0 || minutesNum > 59) {
+      Alert.alert('Invalid Input', 'Please enter valid numbers for hours and minutes.');
+      return;
+    }
+
+    if (hoursNum === 0 && minutesNum === 0) {
+      Alert.alert('Invalid Duration', 'Timer duration must be greater than 0.');
+      return;
+    }
+
+    const totalSeconds = hoursNum * 3600 + minutesNum * 60;
+    startTimer(totalSeconds);
     navigation.navigate('Home');
+  };
+
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
+    const numValue = parseInt(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setter(numValue.toString());
+    }
   };
 
   return (
@@ -36,7 +57,7 @@ export default function CustomTimerScreen() {
           <TextInput
             style={styles.input}
             value={hours}
-            onChangeText={setHours}
+            onChangeText={handleInputChange(setHours)}
             keyboardType="numeric"
             maxLength={2}
           />
@@ -46,7 +67,7 @@ export default function CustomTimerScreen() {
           <TextInput
             style={styles.input}
             value={minutes}
-            onChangeText={setMinutes}
+            onChangeText={handleInputChange(setMinutes)}
             keyboardType="numeric"
             maxLength={2}
           />
@@ -54,7 +75,7 @@ export default function CustomTimerScreen() {
         </View>
       </View>
       
-      <TouchableOpacity style={styles.startButton} onPress={startCustomTimer}>
+      <TouchableOpacity style={styles.startButton} onPress={validateAndStartTimer}>
         <Text style={styles.startButtonText}>Start Timer</Text>
       </TouchableOpacity>
     </LinearGradient>

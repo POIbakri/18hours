@@ -11,100 +11,97 @@ import { SwipeListView } from 'react-native-swipe-list-view';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+import { TimerContext } from '../context/TimerContext';
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+
 export default function HomeScreen() {
-  const [alarms, setAlarms] = useState<Alarm[]>([]);
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { theme, toggleTheme } = useTheme();
-  const styles = createThemedStyles(theme);
+  const { remainingTime, isActive, pauseTimer, resumeTimer, stopTimer } = useContext(TimerContext);
 
-  useEffect(() => {
-    loadAlarms();
-  }, []);
-
-  async function loadAlarms() {
-    try {
-      const savedAlarms = await AsyncStorage.getItem('alarms');
-      if (savedAlarms) {
-        setAlarms(JSON.parse(savedAlarms));
-      }
-    } catch (error) {
-      console.error('Failed to load alarms:', error);
-    }
-  }
-
-  async function deleteAlarm(id: string) {
-    try {
-      const updatedAlarms = alarms.filter(alarm => alarm.id !== id);
-      await AsyncStorage.setItem('alarms', JSON.stringify(updatedAlarms));
-      setAlarms(updatedAlarms);
-    } catch (error) {
-      console.error('Failed to delete alarm:', error);
-    }
-  }
-
-  function renderAlarmItem({ item }: { item: Alarm }) {
-    return (
-      <Animated.View style={[styles.card, shadowStyle]}>
-        <TouchableOpacity onPress={() => navigation.navigate('Alarm', { alarmId: item.id })}>
-          <Text style={styles.subtitle}>{item.name}</Text>
-          <Text style={[styles.buttonText, { color: colors[theme].text, opacity: 0.7 }]}>
-            {item.type} - Every {item.interval} min
-          </Text>
-          <Text style={[styles.buttonText, { color: colors[theme].text, opacity: 0.5 }]}>
-            Sound: {item.sound || 'Default'}
-          </Text>
-          <Text style={[styles.buttonText, { color: colors[theme].text, opacity: 0.5 }]}>
-            Repeat: {item.repeatDays && item.repeatDays.length > 0 ? item.repeatDays.join(', ') : 'None'}
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  }
-
-  function renderHiddenItem(data: { item: Alarm }) {
-    return (
-      <View style={[localStyles.rowBack, { backgroundColor: colors[theme].error }]}>
-        <TouchableOpacity
-          style={[localStyles.backRightBtn, localStyles.backRightBtnRight]}
-          onPress={() => deleteAlarm(data.item.id)}
-        >
-          <Text style={localStyles.backTextWhite}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <View style={styles.container}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.title}>EighteenHours</Text>
-        <Switch value={theme === 'dark'} onValueChange={toggleTheme} />
+    <LinearGradient colors={['#3b5998', '#192f6a']} style={styles.container}>
+      <Text style={styles.title}>Eighteen Hours</Text>
+      <Text style={styles.timerDisplay}>{formatTime(remainingTime)}</Text>
+      <View style={styles.buttonContainer}>
+        {isActive ? (
+          <TouchableOpacity style={styles.button} onPress={pauseTimer}>
+            <Text style={styles.buttonText}>Pause</Text>
+          </TouchableOpacity>
+        ) : remainingTime > 0 ? (
+          <TouchableOpacity style={styles.button} onPress={resumeTimer}>
+            <Text style={styles.buttonText}>Resume</Text>
+          </TouchableOpacity>
+        ) : null}
+        {remainingTime > 0 && (
+          <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={stopTimer}>
+            <Text style={styles.buttonText}>Stop</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <SwipeListView
-        data={alarms}
-        renderItem={renderAlarmItem}
-        renderHiddenItem={renderHiddenItem}
-        rightOpenValue={-75}
-        previewRowKey={'0'}
-        previewOpenValue={-40}
-        previewOpenDelay={3000}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          <Text style={[styles.subtitle, { textAlign: 'center' }]}>
-            No alarms yet. Create one!
-          </Text>
-        }
-      />
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors[theme].accent }]}
-        onPress={() => navigation.navigate('CreateAlarm')}
-      >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
-        <Text style={styles.buttonText}>Create New Alarm</Text>
+      <TouchableOpacity style={styles.newTimerButton} onPress={() => navigation.navigate('CustomTimer')}>
+        <Text style={styles.buttonText}>New Timer</Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 40,
+  },
+  timerDisplay: {
+    fontSize: 48,
+    color: '#fff',
+    marginBottom: 40,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#4ecdc4',
+    borderRadius: 20,
+    padding: 15,
+    marginHorizontal: 10,
+  },
+  stopButton: {
+    backgroundColor: '#e74c3c',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  newTimerButton: {
+    backgroundColor: '#f39c12',
+    borderRadius: 20,
+    padding: 15,
+    marginTop: 20,
+  },
+});
 
 const localStyles = StyleSheet.create({
   rowBack: {
